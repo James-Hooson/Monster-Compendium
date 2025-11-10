@@ -80,9 +80,6 @@ const App = () => {
     return null
   }
 
-  const getFallbackImage = (name: string) => {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${name}`
-  }
 
   const handleImageLoad = () => {
     setImageLoading(false)
@@ -111,9 +108,10 @@ const App = () => {
 
   return (
     <>
-      <h1 className="text-3xl font-bold underline">Monster Compendium!</h1>
+      <h1 className="text-3xl font-bold text-center text-black
+       bg-white">Compendium of Monsters</h1>
       
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex gap-2 ">
         <button 
           onClick={generateRandomMonster}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -128,13 +126,13 @@ const App = () => {
           {showIndex ? 'Hide Index' : 'Show Index'}
         </button>
 
-        <form onSubmit={handleSearch} className="flex gap-2 flex-1">
+        <form onSubmit={handleSearch} className="flex gap-2 flex-1 ">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name..."
-            className="flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className=" flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button 
             type="submit"
@@ -184,7 +182,7 @@ const App = () => {
       )}
 
       {monsterDetails && !isLoadingDetails && (
-        <div className="mt-6 border rounded-lg bg-gray-50">
+        <div className="mt-6 border rounded-lg bg-red-700">
           <div className="p-4 flex gap-4">
             <div className="relative w-96 h-96 flex-shrink-0">
               {imageLoading && (
@@ -196,19 +194,20 @@ const App = () => {
                 const apiImage = getMonsterImageUrl(monsterDetails)
                 return (
                   <img 
-                    src={imageError || !apiImage ? getFallbackImage(monsterDetails.name) : apiImage}
+                    src={imageError || !apiImage ? (monsterDetails.name) : apiImage}
                     alt={monsterDetails.name}
                     onLoad={handleImageLoad}
                     onError={handleImageError}
                     loading="lazy"
-                    className={`w-96 h-96${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+                    className={`w-96 h-96 ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
                   />
                 )
               })()}
             </div>
+            {/* Monster Name */}
             <div className="flex-1 overflow-y-auto" style={{ maxHeight: '600px' }}>
-              <h2 className="text-3xl font-bold mb-2">{monsterDetails.name}</h2>
-              <p className="text-sm text-gray-600 italic mb-4">
+              <h2 className="text-3xl font-bold text-white mb-2">{monsterDetails.name}</h2>
+              <p className="text-sm text-white italic mb-4">
                 {monsterDetails.size} {monsterDetails.type}, {monsterDetails.alignment}
               </p>
 
@@ -265,7 +264,7 @@ const App = () => {
                   <h3 className="font-bold mb-2">Proficiencies</h3>
                   {monsterDetails.proficiencies.map((prof: any, idx: number) => (
                     <p key={idx} className="text-sm">
-                      <strong>{prof.proficiency.name}:</strong> +{prof.value}
+                      <strong>{prof.proficiency?.name || 'Unknown'}:</strong> +{prof.value}
                     </p>
                   ))}
                 </div>
@@ -294,7 +293,7 @@ const App = () => {
                   )}
                   {monsterDetails.condition_immunities?.length > 0 && (
                     <p>
-                      <strong>Condition Immunities:</strong> {monsterDetails.condition_immunities.map((c: any) => c.name).join(', ')}
+                      <strong>Condition Immunities:</strong> {monsterDetails.condition_immunities.map((c: any) => c?.name || 'Unknown').join(', ')}
                     </p>
                   )}
                 </div>
@@ -343,7 +342,10 @@ const App = () => {
                       )}
                       {action.damage && action.damage.length > 0 && (
                         <p className="text-sm">
-                          <strong>Damage:</strong> {action.damage.map((d: any) => `${d.damage_dice} ${d.damage_type.name}`).join(', ')}
+                          <strong>Damage:</strong> {action.damage
+                            .filter((d: any) => d?.damage_dice && d?.damage_type)
+                            .map((d: any) => `${d.damage_dice} ${d.damage_type?.name || 'unknown'}`)
+                            .join(', ')}
                         </p>
                       )}
                     </div>
@@ -367,7 +369,7 @@ const App = () => {
           </div>
 
           {/* Navigation buttons at the very bottom */}
-          <div className="flex justify-between items-center p-4 border-t bg-gray-100">
+          <div className="flex justify-between items-center p-4 border-t bg-white">
             <button
               onClick={goToPrevious}
               className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -375,7 +377,7 @@ const App = () => {
               ← Previous
             </button>
             
-            <span className="text-gray-600">
+            <span className="text-white">
               Monster {currentIndex + 1} of {monsters?.length || 0}
             </span>
             
