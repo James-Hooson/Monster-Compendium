@@ -3,402 +3,263 @@ import { useQuery } from '@tanstack/react-query'
 import { getMonsters, getMonsterDetails } from '../apiClient'
 
 const App = () => {
-  const [currentIndex, setCurrentIndex] = useState<number>(0)
-  const [searchTerm, setSearchTerm] = useState<string>('')
-  const [showIndex, setShowIndex] = useState<boolean>(false)
-  const [imageError, setImageError] = useState<boolean>(false)
-  const [imageLoading, setImageLoading] = useState<boolean>(true)
-  
-  const { data: monsters, isPending, isError } = useQuery({
-    queryKey: ['monsters'],
+  // constants
+  const [current, setCurrent] = useState<number>(0)
+  const [search, setSearch] = useState<string>('')
+  const {data: monsters, isPending, isError} = useQuery({
+    queryKey:['monsters'],
     queryFn: getMonsters
   })
-
-  const selectedMonster = monsters?.[currentIndex]?.index
-
-  const { data: monsterDetails, isLoading: isLoadingDetails, isError: isDetailsError } = useQuery({
+  const filteredMonsters = monsters?.filter(monster =>{
+    return monster.name.toLowerCase().includes(search.toLowerCase())
+  })
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setSearch(e.target.value)
+}
+const selectMonster = (index: number)=> {
+  setCurrent(index)
+  setSearch('')
+}
+  const RandomMonster = () => {
+    if (monsters && monsters.length > 0){
+      const random = Math.floor(Math.random() * monsters.length)
+      setCurrent(random)
+    }
+  }
+  const selectedMonster = monsters?.[current]?.index
+  
+  const {data: monsterDetails, isLoading,isDetailsError, isError: Error} = useQuery ({
     queryKey: ['monster', selectedMonster],
     queryFn: () => getMonsterDetails(selectedMonster!),
     enabled: !!selectedMonster,
     retry: 2
   })
 
-  const generateRandomMonster = () => {
-    if (monsters && monsters.length > 0) {
-      const randomIndex = Math.floor(Math.random() * monsters.length)
-      setCurrentIndex(randomIndex)
-      setImageError(false)
-      setImageLoading(true)
-    }
-  }
-
-  const goToNext = () => {
-    if (monsters) {
-      setCurrentIndex((currentIndex + 1) % monsters.length)
-      setImageError(false)
-      setImageLoading(true)
-    }
-  }
-
-  const goToPrevious = () => {
-    if (monsters) {
-      setCurrentIndex((currentIndex - 1 + monsters.length) % monsters.length)
-      setImageError(false)
-      setImageLoading(true)
-    }
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!monsters || !searchTerm.trim()) return
-
-    const foundIndex = monsters.findIndex(monster => 
-      monster.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
-    if (foundIndex !== -1) {
-      setCurrentIndex(foundIndex)
-      setSearchTerm('')
-      setImageError(false)
-      setImageLoading(true)
-    } else {
-      alert('Monster not found. Try searching by name.')
-    }
-  }
-
-  const goToMonster = (index: number) => {
-    setCurrentIndex(index)
-    setShowIndex(false)
-    setImageError(false)
-    setImageLoading(true)
-  }
-
-  const getMonsterImageUrl = (details: any) => {
-    if (details?.image) {
-      return `https://www.dnd5eapi.co${details.image}`
-    }
-    return null
-  }
-
-
-  const handleImageLoad = () => {
-    setImageLoading(false)
-  }
-
-  const handleImageError = () => {
-    setImageError(true)
-    setImageLoading(false)
-  }
-
-  const getModifier = (score: number) => {
-    const mod = Math.floor((score - 10) / 2)
-    return mod >= 0 ? `+${mod}` : `${mod}`
-  }
-
-  const formatSenseKey = (key: string) => {
-    return key
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-  }
-
-  if (isPending) return <div className="p-8 text-center">Loading monsters...</div>
-
-  if (isError) return <div className="p-8 text-center text-red-500">Error loading monsters. Please refresh the page.</div>
+  if (isPending) return <div>Loading....</div>
+  if (isError) return <div>Error...</div>
+  console.log(monsterDetails)
 
   return (
-    <>
-      <h1 className="text-3xl font-bold text-center text-black
-       bg-white">Compendium of Monsters</h1>
-      
-      <div className="mt-4 flex gap-2 ">
-        <button 
-          onClick={generateRandomMonster}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Random
-        </button>
-
-        <button 
-          onClick={() => setShowIndex(!showIndex)}
-          className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-        >
-          {showIndex ? 'Hide Index' : 'Show Index'}
-        </button>
-
-        <form onSubmit={handleSearch} className="flex gap-2 flex-1 ">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name..."
-            className=" flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-red-950 to-black">
+      {/* Nav bar */}
+      <nav className="bg-black/60 backdrop-blur-md border-b-2 border-red-600/50 p-4 sticky top-0 z-10 shadow-lg shadow-red-900/50">
+        <div className="max-w-6xl mx-auto flex items-center gap-4">
           <button 
-            type="submit"
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            onClick={RandomMonster} 
+            className="bg-red-700 hover:bg-red-600 text-amber-100 font-bold py-2 px-6 rounded border-2 border-amber-600/50 transition-all duration-200 shadow-lg hover:shadow-amber-500/30 font-serif tracking-wide"
           >
-            Search
+            🎲 Generate
           </button>
-        </form>
-      </div>
+          
+          <div className="relative flex-1 max-w-md">
+            <input 
+              type="text"
+              placeholder="🔍 Scry for creatures..."
+              value={search}
+              onChange={handleSearch}
+              aria-label="Search for monsters"
+              className="w-full bg-black/70 border-2 border-amber-700/60 rounded px-4 py-2 text-amber-100 placeholder-amber-700/60 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-600/40 font-serif"
+            />
+            
+            {/* Search Results Dropdown */}
+            {search && filteredMonsters && filteredMonsters.length > 0 && (
+              <div className="absolute top-full mt-2 w-full bg-black/95 border-2 border-amber-700/60 rounded max-h-60 overflow-y-auto shadow-2xl shadow-red-900/50">
+                {filteredMonsters.map((monster) => (
+                  <div 
+                    key={monster.index}
+                    onClick={() => selectMonster(monsters?.findIndex(m => m.index === monster.index) ?? 0)}
+                    className="p-3 hover:bg-red-900/40 cursor-pointer border-b border-amber-900/30 last:border-b-0 text-amber-100 transition-colors font-serif"
+                  >
+                    ⚔️ {monster.name}
+                  </div>
+                ))}
+              </div>
+            )}
 
-      {showIndex && monsters && (
-        <div className="mt-4 p-4 border rounded-lg bg-white max-h-96 overflow-y-auto">
-          <h2 className="text-xl font-bold mb-3 sticky top-0 bg-white pb-2">Monster Index</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {monsters.map((monster, index) => (
-              <button
-                key={monster.index}
-                onClick={() => goToMonster(index)}
-                className={`text-left px-3 py-2 rounded hover:bg-blue-100 transition ${
-                  index === currentIndex ? 'bg-blue-200 font-semibold' : 'bg-gray-50'
-                }`}
-              >
-                {monster.name}
-              </button>
-            ))}
+            {/* No search results */}
+            {search && filteredMonsters && filteredMonsters.length === 0 && (
+              <div className="absolute top-full mt-2 w-full bg-black/95 border-2 border-amber-700/60 rounded p-4 text-amber-700 text-center font-serif italic">
+                No beasts match thy query...
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </nav>
 
-      {isLoadingDetails && (
-        <div className="mt-6 p-8 text-center border rounded-lg bg-gray-50">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p>Loading monster details...</p>
-        </div>
-      )}
+      {/* Main Content */}
+      <main className="max-w-5xl mx-auto p-6">
+        <h1 className="text-5xl font-bold text-center text-amber-400 mb-2 drop-shadow-2xl font-serif tracking-wider">
+          📜 MONSTER COMPENDIUM 📜
+        </h1>
+        <p className="text-center text-amber-700 font-serif italic mb-8">
+          A Gentleman and a Scholar's Guide to the Beasts of the Realm
+        </p>
 
-      {isDetailsError && (
-        <div className="mt-6 p-8 text-center border rounded-lg bg-red-50">
-          <p className="text-red-600 mb-4">Failed to load monster details.</p>
-          <button 
-            onClick={() => goToNext()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Try Next Monster
-          </button>
-        </div>
-      )}
+        {isLoading && (
+          <div className="text-center text-amber-400 text-xl py-12 font-serif animate-pulse">
+            ⏳ Consulting ancient tomes...
+          </div>
+        )}
+        
+        {isDetailsError && (
+          <div className="bg-red-950/50 border-2 border-red-700 rounded-lg p-4 text-red-400 text-center font-serif">
+            ⚠️ The arcane connection has been severed!
+          </div>
+        )}
 
-      {monsterDetails && !isLoadingDetails && (
-        <div className="mt-6 border rounded-lg bg-red-700">
-          <div className="p-4 flex gap-4">
-            <div className="relative w-96 h-96 flex-shrink-0">
-              {imageLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded-lg">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-                </div>
-              )}
-              {(() => {
-                const apiImage = getMonsterImageUrl(monsterDetails)
-                return (
-                  <img 
-                    src={imageError || !apiImage ? (monsterDetails.name) : apiImage}
-                    alt={monsterDetails.name}
-                    onLoad={handleImageLoad}
-                    onError={handleImageError}
-                    loading="lazy"
-                    className={`w-96 h-96 ${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
-                  />
-                )
-              })()}
-            </div>
-            {/* Monster Name */}
-            <div className="flex-1 overflow-y-auto" style={{ maxHeight: '600px' }}>
-              <h2 className="text-3xl font-bold text-white mb-2">{monsterDetails.name}</h2>
-              <p className="text-sm text-white italic mb-4">
+        {monsterDetails && (
+          <div className="bg-gradient-to-br from-amber-50 to-amber-100 border-4 border-amber-800 rounded-lg p-8 shadow-2xl relative">
+            {/* Decorative corners */}
+            <div className="absolute top-2 left-2 text-amber-800 text-2xl">╔</div>
+            <div className="absolute top-2 right-2 text-amber-800 text-2xl">╗</div>
+            <div className="absolute bottom-2 left-2 text-amber-800 text-2xl">╚</div>
+            <div className="absolute bottom-2 right-2 text-amber-800 text-2xl">╝</div>
+
+            {/* Monster Header */}
+            <div className="border-b-2 border-amber-800 pb-6 mb-6">
+              <h2 className="text-4xl font-bold text-red-900 mb-2 font-serif text-center tracking-wide">
+                {monsterDetails.name.toUpperCase()}
+              </h2>
+              <p className="text-center text-amber-900 italic font-serif mb-4">
                 {monsterDetails.size} {monsterDetails.type}, {monsterDetails.alignment}
               </p>
-
-              {/* Basic Stats */}
-              <div className="mb-4 p-3 bg-white rounded">
-                <p className="mb-1">
-                  <strong>Armor Class:</strong> {monsterDetails.armor_class?.[0]?.value || 'N/A'}
-                </p>
-                <p className="mb-1">
-                  <strong>Hit Points:</strong> {monsterDetails.hit_points} ({monsterDetails.hit_points_roll || 'N/A'})
-                </p>
-                <p className="mb-1">
-                  <strong>Speed:</strong> {monsterDetails.speed && Object.entries(monsterDetails.speed).map(([key, value]) => `${key} ${value}`).join(', ')}
-                </p>
-                <p>
-                  <strong>Challenge Rating:</strong> {monsterDetails.challenge_rating} ({monsterDetails.xp?.toLocaleString() || 0} XP)
-                </p>
+              {/* Monster Image */}
+            {monsterDetails.image && (
+              <div className="mt-6 flex justify-center border-t-2 border-amber-800 pt-6">
+                <img 
+                  src={`https://www.dnd5eapi.co${monsterDetails.image}`} 
+                  alt={monsterDetails.name}
+                  className="rounded border-4 border-amber-800 shadow-2xl max-w-md w-full sepia-[0.2]"
+                />
               </div>
-
-              {/* Ability Scores */}
-              <div className="mb-4 p-3 bg-white rounded">
-                <h3 className="font-bold mb-2">Ability Scores</h3>
-                <div className="grid grid-cols-3 gap-2 text-center text-sm">
+            )}
+              
+              <div className="border-2 border-amber-700 bg-amber-50 rounded p-4 mt-4">
+                <div className="grid grid-cols-2 gap-3 text-amber-950 font-serif text-sm">
                   <div>
-                    <div className="font-semibold">STR</div>
-                    <div>{monsterDetails.strength} ({getModifier(monsterDetails.strength)})</div>
+                    <span className="font-bold">Challenge Rating:</span> {monsterDetails.challenge_rating} ⚔️
                   </div>
                   <div>
-                    <div className="font-semibold">DEX</div>
-                    <div>{monsterDetails.dexterity} ({getModifier(monsterDetails.dexterity)})</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">CON</div>
-                    <div>{monsterDetails.constitution} ({getModifier(monsterDetails.constitution)})</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">INT</div>
-                    <div>{monsterDetails.intelligence} ({getModifier(monsterDetails.intelligence)})</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">WIS</div>
-                    <div>{monsterDetails.wisdom} ({getModifier(monsterDetails.wisdom)})</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">CHA</div>
-                    <div>{monsterDetails.charisma} ({getModifier(monsterDetails.charisma)})</div>
+                    <span className="font-bold">Experience Points:</span> {monsterDetails.xp?.toLocaleString() || 'Unknown'} XP
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Proficiencies */}
-              {monsterDetails.proficiencies && monsterDetails.proficiencies.length > 0 && (
-                <div className="mb-4 p-3 bg-white rounded">
-                  <h3 className="font-bold mb-2">Proficiencies</h3>
-                  {monsterDetails.proficiencies.map((prof: any, idx: number) => (
-                    <p key={idx} className="text-sm">
-                      <strong>{prof.proficiency?.name || 'Unknown'}:</strong> +{prof.value}
-                    </p>
-                  ))}
+            {/* Combat Stats */}
+            <div className="mb-6 bg-red-50 border-2 border-red-800 rounded p-4">
+              <div className="grid grid-cols-2 gap-4 font-serif">
+                <div>
+                  <span className="text-red-900 font-bold">Armor Class:</span>
+                  <span className="text-red-950 text-xl ml-2 font-bold">{monsterDetails.armor_class[0]?.value}</span>
+                  <span className="text-red-800 text-sm ml-1">
+                    ({monsterDetails.armor_class[0]?.type || 'natural armor'})
+                  </span>
                 </div>
-              )}
-
-              {/* Damage Vulnerabilities, Resistances, Immunities */}
-              {(monsterDetails.damage_vulnerabilities?.length > 0 || 
-                monsterDetails.damage_resistances?.length > 0 || 
-                monsterDetails.damage_immunities?.length > 0 ||
-                monsterDetails.condition_immunities?.length > 0) && (
-                <div className="mb-4 p-3 bg-white rounded text-sm">
-                  {monsterDetails.damage_vulnerabilities?.length > 0 && (
-                    <p className="mb-1">
-                      <strong>Vulnerabilities:</strong> {monsterDetails.damage_vulnerabilities.join(', ')}
-                    </p>
-                  )}
-                  {monsterDetails.damage_resistances?.length > 0 && (
-                    <p className="mb-1">
-                      <strong>Resistances:</strong> {monsterDetails.damage_resistances.join(', ')}
-                    </p>
-                  )}
-                  {monsterDetails.damage_immunities?.length > 0 && (
-                    <p className="mb-1">
-                      <strong>Damage Immunities:</strong> {monsterDetails.damage_immunities.join(', ')}
-                    </p>
-                  )}
-                  {monsterDetails.condition_immunities?.length > 0 && (
-                    <p>
-                      <strong>Condition Immunities:</strong> {monsterDetails.condition_immunities.map((c: any) => c?.name || 'Unknown').join(', ')}
-                    </p>
-                  )}
+                <div>
+                  <span className="text-red-900 font-bold">Hit Points:</span>
+                  <span className="text-red-950 text-xl ml-2 font-bold">{monsterDetails.hit_points}</span>
+                  <span className="text-red-800 text-sm ml-1">
+                    ({monsterDetails.hit_dice})
+                  </span>
                 </div>
-              )}
+                
+              </div>
+            </div>
 
-              {/* Senses */}
-              {monsterDetails.senses && (
-                <div className="mb-4 p-3 bg-white rounded text-sm">
-                  <h3 className="font-bold mb-2">Senses</h3>
-                  {Object.entries(monsterDetails.senses).map(([key, value]) => (
-                    <p key={key}><strong>{formatSenseKey(key)}:</strong> {value}</p>
-                  ))}
-                </div>
-              )}
+            {/* Ability Scores*/}
+            <div className="mb-6 border-t-2 border-b-2 border-amber-800 py-4">
+              <div className="grid grid-cols-6 gap-2">
+                {[
+                  { label: 'STR', value: monsterDetails.strength },
+                  { label: 'DEX', value: monsterDetails.dexterity },
+                  { label: 'CON', value: monsterDetails.constitution },
+                  { label: 'INT', value: monsterDetails.intelligence },
+                  { label: 'WIS', value: monsterDetails.wisdom },
+                  { label: 'CHA', value: monsterDetails.charisma }
+                ].map(stat => {
+                  const modifier = Math.floor((stat.value - 10) / 2)
+                  const modifierStr = modifier >= 0 ? `+${modifier}` : `${modifier}`
+                  return (
+                    <div key={stat.label} className="bg-amber-100 border-2 border-amber-900 rounded text-center p-2">
+                      <div className="text-amber-900 font-bold text-xs font-serif">{stat.label}</div>
+                      <div className="text-amber-950 text-2xl font-bold">{stat.value}</div>
+                      <div className="text-amber-800 text-sm">({modifierStr})</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
 
-              {/* Languages */}
-              {monsterDetails.languages && (
-                <div className="mb-4 p-3 bg-white rounded text-sm">
-                  <p><strong>Languages:</strong> {monsterDetails.languages || 'None'}</p>
-                </div>
-              )}
+            {/* Saving Throws & Skills */}
+            {monsterDetails.proficiencies && monsterDetails.proficiencies.length > 0 && (
+              <div className="mb-4 font-serif text-sm text-amber-950">
+                <span className="font-bold">Proficiencies:</span> {monsterDetails.proficiencies.map(p => p.proficiency.name).join(', ')}
+              </div>
+            )}
 
-              {/* Special Abilities */}
-              {monsterDetails.special_abilities && monsterDetails.special_abilities.length > 0 && (
-                <div className="mb-4 p-3 bg-white rounded">
-                  <h3 className="font-bold mb-2">Special Abilities</h3>
-                  {monsterDetails.special_abilities.map((ability: any, idx: number) => (
-                    <div key={idx} className="mb-2">
-                      <p className="font-semibold text-sm">{ability.name}</p>
-                      <p className="text-sm text-gray-700">{ability.desc}</p>
+            {/* Damage Resistances/Immunities */}
+            {(monsterDetails.damage_resistances?.length > 0 || monsterDetails.damage_immunities?.length > 0) && (
+              <div className="mb-4 font-serif text-sm">
+                {monsterDetails.damage_resistances?.length > 0 && (
+                  <div className="text-amber-950">
+                    <span className="font-bold">Damage Resistances:</span> {monsterDetails.damage_resistances.join(', ')}
+                  </div>
+                )}
+                {monsterDetails.damage_immunities?.length > 0 && (
+                  <div className="text-amber-950">
+                    <span className="font-bold">Damage Immunities:</span> {monsterDetails.damage_immunities.join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Languages */}
+            <div className="mb-6 font-serif text-sm text-amber-950">
+              <span className="font-bold">Languages:</span> {monsterDetails.languages || '—'}
+            </div>
+
+            {/* Special Abilities */}
+            {monsterDetails.special_abilities && monsterDetails.special_abilities.length > 0 && (
+              <div className="mb-6 border-t-2 border-amber-800 pt-4">
+                <h3 className="text-xl font-bold text-red-900 mb-3 font-serif">✨ Special Abilities</h3>
+                <div className="space-y-3">
+                  {monsterDetails.special_abilities.map((ability, index) => (
+                    <div key={index} className="bg-amber-50 border border-amber-700 rounded p-3">
+                      <p className="font-bold text-red-900 font-serif italic mb-1">⚡ {ability.name}</p>
+                      <p className="text-amber-950 text-sm font-serif leading-relaxed">{ability.desc}</p>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Actions */}
-              {monsterDetails.actions && monsterDetails.actions.length > 0 && (
-                <div className="mb-4 p-3 bg-white rounded">
-                  <h3 className="font-bold mb-2">Actions</h3>
-                  {monsterDetails.actions.map((action: any, idx: number) => (
-                    <div key={idx} className="mb-2">
-                      <p className="font-semibold text-sm">{action.name}</p>
-                      <p className="text-sm text-gray-700">{action.desc}</p>
-                      {action.attack_bonus && (
-                        <p className="text-sm"><strong>Attack Bonus:</strong> +{action.attack_bonus}</p>
-                      )}
-                      {action.damage && action.damage.length > 0 && (
-                        <p className="text-sm">
-                          <strong>Damage:</strong> {action.damage
-                            .filter((d: any) => d?.damage_dice && d?.damage_type)
-                            .map((d: any) => `${d.damage_dice} ${d.damage_type?.name || 'unknown'}`)
-                            .join(', ')}
-                        </p>
-                      )}
+            {/* Actions */}
+            {monsterDetails.actions && monsterDetails.actions.length > 0 && (
+              <div className="mb-6 border-t-2 border-amber-800 pt-4">
+                <h3 className="text-xl font-bold text-red-900 mb-3 font-serif">⚔️ Actions</h3>
+                <div className="space-y-3">
+                  {monsterDetails.actions.map((action, index) => (
+                    <div key={index} className="bg-amber-50 border border-amber-700 rounded p-3">
+                      <p className="font-bold text-red-900 font-serif italic mb-1">🗡️ {action.name}</p>
+                      <p className="text-amber-950 text-sm font-serif leading-relaxed">{action.desc}</p>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Legendary Actions */}
-              {monsterDetails.legendary_actions && monsterDetails.legendary_actions.length > 0 && (
-                <div className="mb-4 p-3 bg-white rounded">
-                  <h3 className="font-bold mb-2">Legendary Actions</h3>
-                  {monsterDetails.legendary_actions.map((action: any, idx: number) => (
-                    <div key={idx} className="mb-2">
-                      <p className="font-semibold text-sm">{action.name}</p>
-                      <p className="text-sm text-gray-700">{action.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+
+            {/* Lore footer */}
+            <div className="mt-6 text-center text-amber-800 text-xs font-serif italic border-t border-amber-700 pt-4">
+              "Knowledge of one's foe is the first step to victory" — Sun Tzu or something
             </div>
           </div>
-
-          {/* Navigation buttons at the very bottom */}
-          <div className="flex justify-between items-center p-4 border-t bg-white">
-            <button
-              onClick={goToPrevious}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            >
-              ← Previous
-            </button>
-            
-            <span className="text-white">
-              Monster {currentIndex + 1} of {monsters?.length || 0}
-            </span>
-            
-            <button
-              onClick={goToNext}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            >
-              Next →
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {monsters && !monsterDetails && !isLoadingDetails && !isDetailsError && (
-        <div className="mt-4">
-          <h2 className="text-2xl font-semibold mb-2">All Monsters ({monsters.length})</h2>
-          <p className="text-sm text-gray-600">Click "Random", "Show Index", or use the search to see details</p>
-        </div>
-      )}
-    </>
-  )
-}
+        )}
+      </main>
+    </div>
+  )}
+ 
 
 export default App
+
+
