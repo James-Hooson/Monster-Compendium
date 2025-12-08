@@ -1,3 +1,3 @@
 DND 5e Monster Compendium
 
-Small personal project creating a React site suing the DnD5e API
+Small personal project creating a React site using the DnD5e API
