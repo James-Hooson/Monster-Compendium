@@ -1,6 +1,6 @@
 import request from 'superagent'
 
-const rootURL = 'https://www.dnd5eapi.co/api/2014'
+const rootURL = 'https://www.dnd5eapi.co/api'
 
 export async function getSpells() {
   const res = await request.get(`${rootURL}/spells`)
